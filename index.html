@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#1b5e20">
+<title>Soccer Coacher</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div id="stage">
+  <div id="pitch">
+    <!-- Field is injected here by app.js -->
+    <div id="layer"></div>
+  </div>
+</div>
+
+<button id="gear" class="chrome-btn" aria-label="Settings" title="Settings">
+  <svg viewBox="0 0 24 24" aria-hidden="true">
+    <path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58ZM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6Z"/>
+  </svg>
+</button>
+
+<p id="welcome" hidden>Tap the <b>gear</b> to add players &rarr;</p>
+
+<div id="bar" hidden></div>
+
+<div id="scrim" hidden></div>
+
+<aside id="drawer" hidden aria-label="Settings">
+  <header>
+    <h1>Settings</h1>
+    <button id="drawer-close" class="icon-btn" aria-label="Close settings">&times;</button>
+  </header>
+
+  <div class="drawer-body">
+
+    <section>
+      <h2>Field</h2>
+      <button id="add-player" class="big">+ Add Player</button>
+      <button id="toggle-ball" class="big">Add Ball</button>
+    </section>
+
+    <section>
+      <h2>Field View</h2>
+      <div class="seg" id="view-preset">
+        <button data-preset="def">Defense</button>
+        <button data-preset="full">Full Field</button>
+        <button data-preset="att">Attack</button>
+      </div>
+      <label class="slider">
+        <span>Zoom <b id="zoom-val">1.0&times;</b></span>
+        <input id="zoom" type="range" min="1" max="2.6" step="0.05" value="1">
+      </label>
+      <p class="hint">Zooming past 1&times; crops the sidelines so the players and lines get bigger.</p>
+    </section>
+
+    <section>
+      <h2>Saved Positions</h2>
+      <button id="save-pos" class="big primary">Save Current Positions&hellip;</button>
+      <ul id="formation-list" class="flist"></ul>
+      <p class="hint" id="formation-empty">Nothing saved yet. Arrange the players, then save the setup — it becomes a button along the bottom of the screen.</p>
+      <label class="slider">
+        <span>Animation speed <b id="dur-val">1.2s</b></span>
+        <input id="dur" type="range" min="300" max="4000" step="100" value="1200">
+      </label>
+    </section>
+
+    <section>
+      <h2>Display</h2>
+      <button id="fullscreen" class="big">Enter Full Screen</button>
+      <button id="reset" class="big danger">Reset Everything</button>
+      <p class="hint">Everything is stored on this device only — no account, no server.</p>
+    </section>
+
+  </div>
+</aside>
+
+<div id="editor" hidden role="dialog" aria-label="Edit player">
+  <label class="field">
+    <span>Label / Position</span>
+    <input id="ed-label" type="text" maxlength="4" autocomplete="off" spellcheck="false" placeholder="e.g. GK, LB, CM">
+  </label>
+  <div class="swatches" id="ed-colors"></div>
+  <div class="editor-actions">
+    <button id="ed-delete" class="danger">Remove</button>
+    <button id="ed-done" class="primary">Done</button>
+  </div>
+</div>
+
+<div id="modal" hidden role="dialog" aria-modal="true">
+  <div class="modal-card">
+    <h3 id="modal-title"></h3>
+    <p id="modal-msg" hidden></p>
+    <input id="modal-input" type="text" autocomplete="off" hidden>
+    <div class="modal-actions">
+      <button id="modal-cancel">Cancel</button>
+      <button id="modal-ok" class="primary">OK</button>
+    </div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>

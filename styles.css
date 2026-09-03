@@ -1,0 +1,421 @@
+/* ---------- Soccer Coacher ---------- */
+
+:root {
+  --grass:        #2e7d32;
+  --grass-dark:   #276e2b;
+  --grass-deep:   #14411a;
+  --line:         #ffffff;
+  --chrome:       #10241a;
+  --chrome-2:     #16382a;
+  --chrome-line:  #2f5c46;
+  --ink:          #eaf5ee;
+  --ink-dim:      #9dbfa9;
+  --accent:       #4caf50;
+  --danger:       #c8442f;
+  --dur:          1200ms;
+}
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  background: var(--grass-deep);
+  color: var(--ink);
+  font: 16px/1.35 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, system-ui, sans-serif;
+  overscroll-behavior: none;
+}
+
+/* ---------- Stage & pitch ---------- */
+
+#stage {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  touch-action: none;
+  background: var(--grass-deep);
+}
+
+#pitch {
+  position: absolute;
+  transform-origin: 0 0;
+  transition: transform 320ms cubic-bezier(.25,.8,.3,1), width 0s, height 0s;
+  will-change: transform;
+}
+
+#pitch > svg.field {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+#layer {
+  position: absolute;
+  inset: 0;
+}
+
+/* ---------- Player tokens ---------- */
+
+.player, .ball {
+  position: absolute;
+  width: 5%;
+  aspect-ratio: 1;
+  margin: 0;
+  transform: translate(-50%, -50%);
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.player {
+  border-radius: 50%;
+  background: var(--c, #1d3557);
+  border: 0.12em solid rgba(255,255,255,.92);
+  box-shadow: 0 0.14em 0.3em rgba(0,0,0,.45);
+  display: grid;
+  place-items: center;
+  color: var(--t, #fff);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.player .lbl {
+  font-size: 0.8em;
+  line-height: 1;
+  pointer-events: none;
+  text-transform: uppercase;
+}
+.player[data-len="3"] .lbl { font-size: 0.62em; }
+.player[data-len="4"] .lbl { font-size: 0.48em; }
+
+.ball {
+  width: 3.9%;
+  filter: drop-shadow(0 0.1em 0.25em rgba(0,0,0,.5));
+}
+.ball svg { width: 100%; height: 100%; display: block; pointer-events: none; }
+
+.player.grabbed, .ball.grabbed {
+  cursor: grabbing;
+  z-index: 20;
+  transform: translate(-50%, -50%) scale(1.12);
+}
+.player.selected { outline: 0.14em dashed #ffd166; outline-offset: 0.12em; }
+
+/* Animation between saved positions — only active while transitioning. */
+#layer.anim .player,
+#layer.anim .ball {
+  transition: left var(--dur) cubic-bezier(.4,.02,.2,1),
+              top  var(--dur) cubic-bezier(.4,.02,.2,1),
+              opacity calc(var(--dur) * 0.5) linear,
+              background-color 240ms linear;
+}
+.player.enter, .ball.enter { opacity: 0; pointer-events: none; }
+
+/* ---------- Chrome ---------- */
+
+.chrome-btn {
+  position: fixed;
+  top: max(12px, env(safe-area-inset-top));
+  right: max(12px, env(safe-area-inset-right));
+  z-index: 40;
+  width: 56px;
+  height: 56px;
+  border: 1px solid var(--chrome-line);
+  border-radius: 50%;
+  background: rgba(16,36,26,.86);
+  color: var(--ink);
+  backdrop-filter: blur(6px);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+.chrome-btn svg { width: 30px; height: 30px; fill: currentColor; }
+.chrome-btn:active { transform: scale(.94); }
+
+#welcome {
+  position: fixed;
+  z-index: 30;
+  top: max(24px, env(safe-area-inset-top));
+  right: 84px;
+  margin: 0;
+  padding: 14px 18px;
+  border: 1px solid var(--chrome-line);
+  border-radius: 14px;
+  background: rgba(16,36,26,.86);
+  color: var(--ink);
+  font-size: 17px;
+  pointer-events: none;
+  backdrop-filter: blur(6px);
+}
+
+/* Saved-position buttons */
+#bar {
+  position: fixed;
+  left: 0; right: 0;
+  bottom: 0;
+  z-index: 35;
+  display: flex;
+  gap: 10px;
+  padding: 12px max(12px, env(safe-area-inset-left)) max(12px, env(safe-area-inset-bottom));
+  overflow-x: auto;
+  scrollbar-width: none;
+  background: linear-gradient(to top, rgba(6,20,12,.72), rgba(6,20,12,0));
+  /* Only the buttons should swallow taps — the grass between them stays draggable. */
+  pointer-events: none;
+}
+#bar::-webkit-scrollbar { display: none; }
+
+#bar button {
+  pointer-events: auto;
+  flex: 0 0 auto;
+  min-height: 52px;
+  padding: 0 22px;
+  border-radius: 26px;
+  border: 1px solid var(--chrome-line);
+  background: rgba(16,36,26,.9);
+  color: var(--ink);
+  font-size: 17px;
+  font-weight: 700;
+  cursor: pointer;
+  backdrop-filter: blur(6px);
+}
+#bar button:active { transform: scale(.96); }
+#bar button.active {
+  background: var(--accent);
+  border-color: #a5d6a7;
+  color: #0b2010;
+}
+
+/* ---------- Drawer ---------- */
+
+#scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 45;
+  background: rgba(0,0,0,.4);
+}
+
+#drawer {
+  position: fixed;
+  top: 0; right: 0; bottom: 0;
+  z-index: 50;
+  width: min(420px, 92vw);
+  display: flex;
+  flex-direction: column;
+  background: var(--chrome);
+  border-left: 1px solid var(--chrome-line);
+  box-shadow: -12px 0 40px rgba(0,0,0,.45);
+  animation: slide-in 220ms cubic-bezier(.2,.8,.3,1);
+}
+@keyframes slide-in { from { transform: translateX(100%); } }
+
+#drawer header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--chrome-line);
+}
+#drawer h1 { margin: 0; font-size: 20px; }
+
+.icon-btn {
+  width: 44px; height: 44px;
+  border: 0; border-radius: 12px;
+  background: var(--chrome-2);
+  color: var(--ink);
+  font-size: 28px; line-height: 1;
+  cursor: pointer;
+}
+
+.drawer-body {
+  padding: 8px 16px 24px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+#drawer section { padding: 14px 0; border-bottom: 1px solid var(--chrome-line); }
+#drawer section:last-child { border-bottom: 0; }
+#drawer h2 {
+  margin: 0 0 10px;
+  font-size: 12px;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+}
+
+button.big {
+  display: block;
+  width: 100%;
+  min-height: 52px;
+  margin-bottom: 8px;
+  padding: 0 16px;
+  border: 1px solid var(--chrome-line);
+  border-radius: 12px;
+  background: var(--chrome-2);
+  color: var(--ink);
+  font-size: 17px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+button.big:active { transform: scale(.985); }
+
+/* Segmented control */
+.seg { display: flex; gap: 6px; margin-bottom: 12px; }
+.seg button {
+  flex: 1;
+  min-height: 48px;
+  border: 1px solid var(--chrome-line);
+  border-radius: 12px;
+  background: var(--chrome-2);
+  color: var(--ink);
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.seg button.on { background: var(--accent); border-color: #a5d6a7; color: #08210e; }
+
+/* Sliders */
+label.slider { display: block; margin: 12px 0 4px; }
+label.slider > span { display: flex; justify-content: space-between; font-size: 14px; color: var(--ink-dim); margin-bottom: 6px; }
+label.slider b { color: var(--ink); }
+input[type=range] {
+  width: 100%;
+  height: 40px;
+  accent-color: var(--accent);
+  background: transparent;
+}
+
+.hint { margin: 8px 0 0; font-size: 13px; color: var(--ink-dim); }
+
+/* Saved-position management list */
+.flist { list-style: none; margin: 0 0 4px; padding: 0; }
+.flist li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(47,92,70,.5);
+}
+.flist .fname {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+}
+.flist .fcount { font-size: 12px; color: var(--ink-dim); font-weight: 400; }
+.flist button {
+  flex: 0 0 auto;
+  min-height: 40px;
+  padding: 0 10px;
+  border: 1px solid var(--chrome-line);
+  border-radius: 10px;
+  background: var(--chrome-2);
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.flist button.x { color: #ffc9bd; border-color: #6d2e22; background: #3a1a14; }
+
+/* ---------- Player editor popover ---------- */
+
+#editor {
+  position: fixed;
+  z-index: 60;
+  width: 268px;
+  padding: 14px;
+  border: 1px solid var(--chrome-line);
+  border-radius: 16px;
+  background: rgba(16,36,26,.97);
+  box-shadow: 0 16px 40px rgba(0,0,0,.5);
+  backdrop-filter: blur(8px);
+}
+
+label.field { display: block; }
+label.field > span { display: block; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-dim); margin-bottom: 6px; }
+
+#editor input[type=text], #modal input[type=text] {
+  width: 100%;
+  min-height: 48px;
+  padding: 0 12px;
+  border: 1px solid var(--chrome-line);
+  border-radius: 12px;
+  background: #0b1b13;
+  color: var(--ink);
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.swatches {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 8px;
+  margin: 12px 0;
+}
+.swatches button {
+  aspect-ratio: 1;
+  border-radius: 50%;
+  border: 2px solid rgba(255,255,255,.25);
+  cursor: pointer;
+  padding: 0;
+}
+.swatches button.on { border-color: #ffd166; box-shadow: 0 0 0 3px rgba(255,209,102,.3); }
+
+.editor-actions, .modal-actions { display: flex; gap: 8px; }
+.editor-actions button, .modal-actions button {
+  flex: 1;
+  min-height: 48px;
+  border: 1px solid var(--chrome-line);
+  border-radius: 12px;
+  background: var(--chrome-2);
+  color: var(--ink);
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* ---------- Modal ---------- */
+
+#modal {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  display: grid;
+  place-items: center;
+  background: rgba(0,0,0,.5);
+  padding: 20px;
+}
+.modal-card {
+  width: min(400px, 100%);
+  padding: 20px;
+  border: 1px solid var(--chrome-line);
+  border-radius: 18px;
+  background: var(--chrome);
+  box-shadow: 0 20px 60px rgba(0,0,0,.6);
+}
+.modal-card h3 { margin: 0 0 10px; font-size: 19px; }
+.modal-card p { margin: 0 0 14px; color: var(--ink-dim); font-size: 15px; }
+.modal-card input { margin-bottom: 14px; }
+
+/* ---------- Button colour modifiers ----------
+   Declared last so they win over the per-context base button rules above. */
+
+button.primary {
+  background: var(--accent);
+  border-color: #a5d6a7;
+  color: #08210e;
+}
+button.danger {
+  background: #3a1a14;
+  border-color: #6d2e22;
+  color: #ffc9bd;
+}
+
+[hidden] { display: none !important; }
